@@ -41,7 +41,7 @@ Bitno je da se instaliraju sve potrebne biblioteke za rad, a one se nalaze u "re
   - pip install requirements.txt
 
 Nakon što su instalirane sve potrebne biblioteke može se odabrati koju metodu se želi koristiti, a kao što je prije objašnjeno implementacija svake metode je u zasebnom dokumentu.
-Prvo je potrebno da se uđe u dokument metode koja se želi koristit, a to se može napraviti pomoću naredbe "cd":
+Prvo je potrebno da se odabere dokument metode koja se želi koristit, a to se može napraviti pomoću naredbe "cd":
   - cd \<ime dokumenta>
 
 Nakon što je odabran dokument python dokumenti u njemu se mogu pokrenuti pomoću sljedeće naredbe:
