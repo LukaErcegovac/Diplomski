@@ -74,8 +74,8 @@ def main():
     psnr_denoised = calculate_psnr(image, denoised_image)
     ssim_denoised = calculate_ssim(image, denoised_image)
     
-    print(f'PSNR između originalne slike i filtrirane slike: {psnr_denoised} dB')
-    print(f'SSIM između originalne slike i filtrirane slike: {ssim_denoised}')
+    print(f'PSNR između originalne slike i Slike nakon uklanjanja šuma: {psnr_denoised} dB')
+    print(f'SSIM između originalne slike i Slike nakon uklanjanja šuma: {ssim_denoised}')
     
     # Prikaz slika
     plt.figure(figsize=(10, 5))
@@ -86,7 +86,7 @@ def main():
     plt.axis('off')
     
     plt.subplot(1, 2, 2)
-    plt.title('Filtrirana slika\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised, ssim_denoised))
+    plt.title('Slika nakon uklanjanja šuma\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised, ssim_denoised))
     plt.imshow(denoised_image, cmap='gray')
     plt.axis('off')
     

@@ -4,6 +4,7 @@ from tkinter import Tk, filedialog
 from matplotlib import pyplot as plt
 from skimage.util import random_noise
 from skimage.metrics import structural_similarity as ssim, peak_signal_noise_ratio as psnr
+import time
 
 # Funkcija za dodavanje speckle šuma slici koristeći skimage
 def add_speckle_noise(image, var, mean):
@@ -25,13 +26,14 @@ def add_speckle_noise(image, var, mean):
 # Funkcija za razinski DWT s ciljnim razinama
 def dwt2(image, target_levels):
     h, w = image.shape
+    
     if h % 2 != 0:
         image = np.pad(image, ((0, 1), (0, 0)), 'constant')
         h += 1
     if w % 2 != 0:
         image = np.pad(image, ((0, 0), (0, 1)), 'constant')
         w += 1
-    
+
     LL = (image[0::2, 0::2] + image[1::2, 0::2] + image[0::2, 1::2] + image[1::2, 1::2]) / 4
     LH = (image[0::2, 0::2] - image[1::2, 0::2] + image[0::2, 1::2] - image[1::2, 1::2]) / 4
     HL = (image[0::2, 0::2] + image[1::2, 0::2] - image[0::2, 1::2] - image[1::2, 1::2]) / 4
@@ -43,18 +45,34 @@ def dwt2(image, target_levels):
     LL, sub_details = dwt2(LL, target_levels - 1)
     return LL, sub_details + [(LH, HL, HH)]
 
+
 # Funkcija za razinski IDWT
 def idwt2(LL, details):
     if not details:
         return LL
+    
     LH, HL, HH = details[0]
+    
     h, w = LL.shape
+    h_lh, w_lh = LH.shape
+    h_hl, w_hl = HL.shape
+    h_hh, w_hh = HH.shape
+    
+    if (h, w) != (h_lh, w_lh):
+        LH = cv2.resize(LH, (w, h))
+    if (h, w) != (h_hl, w_hl):
+        HL = cv2.resize(HL, (w, h))
+    if (h, w) != (h_hh, w_hh):
+        HH = cv2.resize(HH, (w, h))
+    
     image = np.zeros((h * 2, w * 2), dtype=np.float64)
     image[0::2, 0::2] = LL + LH + HL + HH
     image[1::2, 0::2] = LL - LH + HL - HH
     image[0::2, 1::2] = LL + LH - HL - HH
     image[1::2, 1::2] = LL - LH - HL + HH
+    
     return idwt2(image, details[1:])
+
 
 # Funkcija za soft thresholding
 def soft_thresholding(data, threshold):
@@ -69,11 +87,11 @@ def wavelet_filter(image, target_levels, threshold, threshold_type):
     # Konvertiranje slike u float64 radi preciznosti
     image = image.astype(np.float64)
     
-    # Primijena DWT
+    # Primjena DWT
     LL, details = dwt2(image, target_levels)
     print(details)
     
-    # Primijena odabranog thresholdinga 
+    # Primjena odabranog thresholdinga 
     if threshold_type == 'soft':
         details = [(soft_thresholding(d[0], threshold), 
                     soft_thresholding(d[1], threshold), 
@@ -83,7 +101,7 @@ def wavelet_filter(image, target_levels, threshold, threshold_type):
                     hard_thresholding(d[1], threshold), 
                     hard_thresholding(d[2], threshold)) for d in details]
     
-    # Primijena IDWT
+    # Primjena IDWT
     denoised_image = idwt2(LL, details)
     
     # Vraćanje slike na originalne dimenzije ako su promijenjene
@@ -123,22 +141,30 @@ def main():
     
     # Dodavanje zrnatog šuma slici
     noisy_image = add_speckle_noise(image, var=0.2, mean=0.0)
+
+    start_time = time.time()
     
-    # Primijena wavelet filtriranje na sliku sa šumom
-    target_levels = 1  # Broj razina za DWT
-    denoised_image_soft, LL_soft, details_soft = wavelet_filter(noisy_image, target_levels, threshold=25, threshold_type='soft')  
+    # Primjena wavelet filtriranja na sliku sa šumom
+    target_levels = 2  # Broj razina za DWT
+    
+    denoised_image_soft, LL_soft, details_soft = wavelet_filter(noisy_image, target_levels, threshold=25, threshold_type='soft') 
     denoised_image_hard, LL_hard, details_hard = wavelet_filter(noisy_image, target_levels, threshold=25, threshold_type='hard')
+
+    end_time = time.time()
+    processing_time = end_time - start_time
     
-    # Provjera da li su dimenzije jednake
+    # Provjera jesu li dimenzije slike jednake
     if denoised_image_soft.shape != image.shape or denoised_image_hard.shape != image.shape:
         print("Dimenzije filtriranih slika se ne podudaraju s originalom. Izlazim...")
         return
+    
+    
     
     # Izračun PSNR i SSIM između originalne slike i slike sa šumom
     psnr_noisy = calculate_psnr(image, noisy_image)
     ssim_noisy = calculate_ssim(image, noisy_image)
     
-    # Izračun PSNR i SSIM između originalne slike i slike bez šuma 
+    # Izračun PSNR i SSIM između originalne slike i slike nakon uklanjanja šuma
     psnr_denoised_soft = calculate_psnr(image, denoised_image_soft)
     ssim_denoised_soft = calculate_ssim(image, denoised_image_soft)
     psnr_denoised_hard = calculate_psnr(image, denoised_image_hard)
@@ -146,13 +172,14 @@ def main():
     
     print(f'PSNR između originalne i slike sa šumom: {psnr_noisy} dB')
     print(f'SSIM između originalne i slike sa šumom: {ssim_noisy}')
-    print(f'PSNR između originalne i slike bez šuma (soft thresholding): {psnr_denoised_soft} dB')
-    print(f'SSIM između originalne i slike bez šuma (soft thresholding): {ssim_denoised_soft}')
-    print(f'PSNR između originalne i slike bez šuma (hard thresholding): {psnr_denoised_hard} dB')
-    print(f'SSIM između originalne i slike bez šuma (hard thresholding): {ssim_denoised_hard}')
+    print(f'PSNR između originalne i slike nakon uklanjanja šuma(soft thresholding): {psnr_denoised_soft} dB')
+    print(f'SSIM između originalne i slike nakon uklanjanja šuma(soft thresholding): {ssim_denoised_soft}')
+    print(f'PSNR između originalne i slike nakon uklanjanja šuma(hard thresholding): {psnr_denoised_hard} dB')
+    print(f'SSIM između originalne i slike nakon uklanjanja šuma(hard thresholding): {ssim_denoised_hard}')
+    print(f'Vrijeme potrebno za uklanjanje šuma metodom korištenja valića: {processing_time:.4f} sekundi')
     
     # Prikaz rezultata
-    plt.figure(figsize=(20, 15))
+    plt.figure(figsize=(25, 15))
     
     plt.subplot(3, 5, 1)
     plt.title('Originalna slika')
@@ -165,12 +192,12 @@ def main():
     plt.axis('off')
     
     plt.subplot(3, 5, 3)
-    plt.title('Slika bez šuma (Soft)\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised_soft, ssim_denoised_soft))
+    plt.title('Slika nakon uklanjanja šuma (Soft)\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised_soft, ssim_denoised_soft))
     plt.imshow(denoised_image_soft, cmap='gray')
     plt.axis('off')
     
     plt.subplot(3, 5, 4)
-    plt.title('Slika bez šuma (Hard)\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised_hard, ssim_denoised_hard))
+    plt.title('Slika nakon uklanjanja šuma (Hard)\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised_hard, ssim_denoised_hard))
     plt.imshow(denoised_image_hard, cmap='gray')
     plt.axis('off')
     
@@ -179,7 +206,7 @@ def main():
     plt.imshow(LL_soft, cmap='gray')
     plt.axis('off')
 
-    # Prikaz LH, HL, HH podopsege za soft thresholding
+    # Prikaz LH, HL, HH potpodručja za soft thresholding
     LH_soft, HL_soft, HH_soft = details_soft[0]
     plt.subplot(3, 5, 6)
     plt.title('LH (Soft)')
@@ -196,7 +223,7 @@ def main():
     plt.imshow(HH_soft, cmap='gray')
     plt.axis('off')
 
-    # Prikaz LH, HL, HH podopsege za hard thresholding
+    # Prikaz LH, HL, HH potpodručja za hard thresholding
     LH_hard, HL_hard, HH_hard = details_hard[0]
     plt.subplot(3, 5, 9)
     plt.title('LH (Hard)')
@@ -212,6 +239,12 @@ def main():
     plt.title('HH (Hard)')
     plt.imshow(HH_hard, cmap='gray')
     plt.axis('off')
+    
+    plt.subplot(3, 5, 12)
+    plt.axis('off')  
+    plt.text(0.5, 0.5, f'Vrijeme izvođenja:\n{processing_time:.4f} sekundi', 
+             horizontalalignment='center', verticalalignment='center', 
+             fontsize=14, color='black', transform=plt.gca().transAxes)
     
     plt.show()
 

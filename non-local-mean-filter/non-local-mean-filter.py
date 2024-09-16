@@ -4,6 +4,7 @@ from tkinter import Tk, filedialog
 from matplotlib import pyplot as plt
 from skimage.util import random_noise
 from skimage.metrics import structural_similarity as ssim, peak_signal_noise_ratio as psnr
+import time
 
 # Funkcija za dodavanje speckle šuma na sliku
 def add_speckle_noise(image, var, mean):
@@ -88,10 +89,13 @@ def main():
     
     noisy_image = add_speckle_noise(image, var=0.2, mean=0.0)  
 
+    start_time = time.time()
+
     sigma = 10.0
-    
     denoised_image = nonlocal_means_filter(noisy_image, f=1, h=0.40*sigma, sigma=10.0) 
 
+    end_time = time.time()
+    processing_time = end_time - start_time
     
     psnr_noisy = calculate_psnr(image, noisy_image)
     ssim_noisy = calculate_ssim(image, noisy_image)
@@ -102,26 +106,34 @@ def main():
    
     print(f'PSNR između originalne slike i slike sa šumom: {psnr_noisy} dB')
     print(f'SSIM između originalne slike i slike sa šumom: {ssim_noisy}')
-    print(f'PSNR između originalne slike i slike bez šuma: {psnr_denoised} dB')
-    print(f'SSIM između originalne slike i slike bez šuma: {ssim_denoised}')
+    print(f'PSNR između originalne slike i slike nakon uklanjanja šuma: {psnr_denoised} dB')
+    print(f'SSIM između originalne slike i slike nakon uklanjanja šuma: {ssim_denoised}')
+    print(f'Vrijeme potrebno za uklanjanje šuma metodom nelokalnog usrednjavanja: {processing_time:.4f} sekundi')
     
-    # Prikaz slika
-    plt.figure(figsize=(15, 5))
+    # Prikazivanje originalne slike, slike sa šumom i slike nakon uklanjanja šuma
+    plt.figure(figsize=(25, 5))
     
-    plt.subplot(1, 3, 1)
+    plt.subplot(1, 4, 1)
     plt.title('Originalna slika')
     plt.imshow(image, cmap='gray')
     plt.axis('off')
     
-    plt.subplot(1, 3, 2)
+    plt.subplot(1, 4, 2)
     plt.title('Slika sa šumom\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_noisy, ssim_noisy))
     plt.imshow(noisy_image, cmap='gray')
     plt.axis('off')
     
-    plt.subplot(1, 3, 3)
-    plt.title('Slika bez šuma\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised, ssim_denoised))
+    plt.subplot(1, 4, 3)
+    plt.title('Slika nakon uklanjanja šuma\nPSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised, ssim_denoised))
     plt.imshow(denoised_image, cmap='gray')
     plt.axis('off')
+    
+    plt.subplot(1, 4, 4)
+    plt.axis('off')  
+    plt.text(0.5, 0.5, f'Vrijeme izvođenja:\n{processing_time:.4f} sekundi', 
+             horizontalalignment='center', verticalalignment='center', 
+             fontsize=14, color='black', transform=plt.gca().transAxes)
+    
     
     plt.show()
 

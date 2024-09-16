@@ -61,23 +61,23 @@ def main():
     # Dodavanje speckle šuma na sliku s povećanom varijansom
     noisy_image = add_speckle_noise(image, var=0.2, mean=0.0)
 
-    # Primjena valnog denoisinga na sliku sa šumom koristeći skimage
+    # Primjena wavelet filtriranja na sliku sa šumom koristeći skimage
     denoised_image_wavelet = wavelet_denoising(noisy_image)
 
     # Izračunavanje PSNR i SSIM između originalne slike i slike sa šumom
     psnr_noisy = calculate_psnr(image, noisy_image)
     ssim_noisy = calculate_ssim(image, noisy_image)
 
-    # Izračunavanje PSNR i SSIM između originalne slike i slike bez šuma koristeći valni denoising
+    # Izračunavanje PSNR i SSIM između originalne slike i slike nakon uklanjanja šuma
     psnr_denoised_wavelet = calculate_psnr(image, denoised_image_wavelet)
     ssim_denoised_wavelet = calculate_ssim(image, denoised_image_wavelet)
 
     print(f'PSNR između originalne slike i slike sa šumom: {psnr_noisy} dB')
     print(f'SSIM između originalne slike i slike sa šumom: {ssim_noisy}')
-    print(f'PSNR između originalne slike i slike bez šuma (Wavelet): {psnr_denoised_wavelet} dB')
-    print(f'SSIM između originalne slike i slike bez šuma (Wavelet): {ssim_denoised_wavelet}')
+    print(f'PSNR između originalne slike i slike nakon uklanjanja šuma (Wavelet): {psnr_denoised_wavelet} dB')
+    print(f'SSIM između originalne slike i slike nakon uklanjanja šuma (Wavelet): {ssim_denoised_wavelet}')
 
-    # Prikaz originalne, slike sa šumom i bez šuma na slici
+    # Prikaz originalne slike, slike sa šumom i slike nakon uklanjanja šuma
     plt.figure(figsize=(15, 5))
 
     plt.subplot(1, 3, 1)
@@ -91,7 +91,7 @@ def main():
     plt.axis('off')
 
     plt.subplot(1, 3, 3)
-    plt.title(f'Slika bez šuma (Wavelet)\nPSNR: {psnr_denoised_wavelet:.2f} dB\nSSIM: {ssim_denoised_wavelet:.4f}')
+    plt.title(f'Slika nakon uklanjanja šuma (Wavelet)\nPSNR: {psnr_denoised_wavelet:.2f} dB\nSSIM: {ssim_denoised_wavelet:.4f}')
     plt.imshow(denoised_image_wavelet, cmap='gray')
     plt.axis('off')
 

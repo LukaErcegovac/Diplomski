@@ -66,16 +66,16 @@ def main():
     psnr_noisy = calculate_psnr(image, noisy_image)
     ssim_noisy = calculate_ssim(image, noisy_image)
     
-    # Izračunavanje PSNR i SSIM između originalne slike i slike bez šuma koristeći skimage mean filter
+    # Izračunavanje PSNR i SSIM između originalne slike i slike nakon uklanjanja šuma koristeći skimage mean filter
     psnr_denoised_skimage = calculate_psnr(image, denoised_image_skimage)
     ssim_denoised_skimage = calculate_ssim(image, denoised_image_skimage)
     
     print(f'PSNR između originalne slike i slike sa šumom: {psnr_noisy} dB')
     print(f'SSIM između originalne slike i slike sa šumom: {ssim_noisy}')
-    print(f'PSNR između originalne slike i slike bez šuma: {psnr_denoised_skimage} dB')
-    print(f'SSIM između originalne slike i slike bez šuma: {ssim_denoised_skimage}')
+    print(f'PSNR između originalne slike i slike nakon uklanjanja šuma: {psnr_denoised_skimage} dB')
+    print(f'SSIM između originalne slike i slike nakon uklanjanja šuma: {ssim_denoised_skimage}')
     
-    # Prikaz originalne, slike sa šumom i bez šuma na slici
+    # Prikazivanje originalne slike, slike sa šumom i slike nakon uklanjanja šuma
     plt.figure(figsize=(15, 5))
     
     plt.subplot(1, 3, 1)
@@ -89,7 +89,7 @@ def main():
     plt.axis('off')
     
     plt.subplot(1, 3, 3)
-    plt.title('Slika bez šuma\n PSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised_skimage, ssim_denoised_skimage))
+    plt.title('Slika nakon uklanjanja šuma\n PSNR: {:.2f} dB\nSSIM: {:.4f}'.format(psnr_denoised_skimage, ssim_denoised_skimage))
     plt.imshow(denoised_image_skimage, cmap='gray')
     plt.axis('off')
     
